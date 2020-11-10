@@ -15,9 +15,9 @@ export type Scalars = {
 export type Query = {
   __typename?: 'Query';
   hello: Scalars['String'];
+  me?: Maybe<User>;
   posts: Array<Post>;
   post?: Maybe<Post>;
-  me?: Maybe<User>;
 };
 
 
@@ -29,6 +29,15 @@ export type QueryPostsArgs = {
 
 export type QueryPostArgs = {
   id: Scalars['Float'];
+};
+
+export type User = {
+  __typename?: 'User';
+  id: Scalars['Float'];
+  username: Scalars['String'];
+  email: Scalars['String'];
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
 };
 
 export type Post = {
@@ -43,41 +52,16 @@ export type Post = {
   textSnippet: Scalars['String'];
 };
 
-export type User = {
-  __typename?: 'User';
-  id: Scalars['Float'];
-  username: Scalars['String'];
-  email: Scalars['String'];
-  createdAt: Scalars['String'];
-  updatedAt: Scalars['String'];
-};
-
 export type Mutation = {
   __typename?: 'Mutation';
-  createPost: Post;
-  updatePost?: Maybe<Post>;
-  deletePost: Scalars['Boolean'];
   changePassword: UserResponse;
   forgotPassword: Scalars['Boolean'];
   register: UserResponse;
   login: UserResponse;
   logout: Scalars['Boolean'];
-};
-
-
-export type MutationCreatePostArgs = {
-  input: PostInput;
-};
-
-
-export type MutationUpdatePostArgs = {
-  title?: Maybe<Scalars['String']>;
-  id: Scalars['Float'];
-};
-
-
-export type MutationDeletePostArgs = {
-  id: Scalars['Float'];
+  createPost: PostResponse;
+  updatePost?: Maybe<Post>;
+  deletePost: Scalars['Boolean'];
 };
 
 
@@ -102,9 +86,20 @@ export type MutationLoginArgs = {
   usernameOrEmail: Scalars['String'];
 };
 
-export type PostInput = {
-  title: Scalars['String'];
-  text: Scalars['String'];
+
+export type MutationCreatePostArgs = {
+  input: PostInput;
+};
+
+
+export type MutationUpdatePostArgs = {
+  title?: Maybe<Scalars['String']>;
+  id: Scalars['Float'];
+};
+
+
+export type MutationDeletePostArgs = {
+  id: Scalars['Float'];
 };
 
 export type UserResponse = {
@@ -123,6 +118,17 @@ export type UsernamePasswordInput = {
   email: Scalars['String'];
   username: Scalars['String'];
   password: Scalars['String'];
+};
+
+export type PostResponse = {
+  __typename?: 'PostResponse';
+  errors?: Maybe<Array<FieldError>>;
+  post?: Maybe<Post>;
+};
+
+export type PostInput = {
+  title: Scalars['String'];
+  text: Scalars['String'];
 };
 
 export type RegularErrorFragment = (
@@ -168,8 +174,14 @@ export type CreatePostMutationVariables = Exact<{
 export type CreatePostMutation = (
   { __typename?: 'Mutation' }
   & { createPost: (
-    { __typename?: 'Post' }
-    & Pick<Post, 'id' | 'createdAt' | 'updatedAt' | 'title' | 'text' | 'points' | 'creatorId'>
+    { __typename?: 'PostResponse' }
+    & { post?: Maybe<(
+      { __typename?: 'Post' }
+      & Pick<Post, 'id' | 'createdAt' | 'updatedAt' | 'title' | 'text' | 'points' | 'creatorId'>
+    )>, errors?: Maybe<Array<(
+      { __typename?: 'FieldError' }
+      & Pick<FieldError, 'field' | 'message'>
+    )>> }
   ) }
 );
 
@@ -280,13 +292,19 @@ export function useChangePasswordMutation() {
 export const CreatePostDocument = gql`
     mutation CreatePost($input: PostInput!) {
   createPost(input: $input) {
-    id
-    createdAt
-    updatedAt
-    title
-    text
-    points
-    creatorId
+    post {
+      id
+      createdAt
+      updatedAt
+      title
+      text
+      points
+      creatorId
+    }
+    errors {
+      field
+      message
+    }
   }
 }
     `;
