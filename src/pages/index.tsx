@@ -4,13 +4,15 @@ import { usePostsQuery } from "../generated/graphql";
 import { Layout } from "../components/Layout";
 import { Box, Button, Flex, Heading, Link, Stack, Text } from "@chakra-ui/core";
 import NextLink from "next/link";
-import React from "react";
+import React, { useState } from "react";
 
 const Index = () => {
+  const [variables, setVariables] = useState({
+    limit: 33,
+    cursor: null as null | string,
+  });
   const [{ data, fetching }] = usePostsQuery({
-    variables: {
-      limit: 10,
-    },
+    variables,
   });
 
   if (!fetching && !data) {
@@ -30,7 +32,7 @@ const Index = () => {
         <div>loading...</div>
       ) : (
         <Stack spacing={8}>
-          {data!.posts.map((post) => (
+          {data!.posts.posts.map((post) => (
             <Box p={5} shadow="md" borderWidth="1px" key={post.id}>
               <Heading fontSize="xl">{post.title}</Heading>
               <Text mt={4}>{post.textSnippet}</Text>
@@ -38,9 +40,19 @@ const Index = () => {
           ))}
         </Stack>
       )}
-      {data ? (
+      {data && data.posts.hasMore ? (
         <Flex>
-          <Button isLoading={fetching} m="auto" my={8}>
+          <Button
+            isLoading={fetching}
+            m="auto"
+            my={8}
+            onClick={() => {
+              setVariables({
+                limit: variables.limit,
+                cursor: data.posts.posts[data.posts.posts.length - 1].createdAt,
+              });
+            }}
+          >
             Load More
           </Button>
         </Flex>
