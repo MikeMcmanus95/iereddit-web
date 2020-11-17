@@ -1,7 +1,7 @@
 import { Box, Button } from "@chakra-ui/core";
 import { Form, Formik } from "formik";
 import { withUrqlClient } from "next-urql";
-import { Router, useRouter } from "next/router";
+import { useRouter } from "next/router";
 import React from "react";
 import { InputField } from "../../../components/InputField";
 import { Layout } from "../../../components/Layout";
@@ -45,7 +45,7 @@ export const EditPost: React.FC<{}> = ({}) => {
     <Layout variant="small">
       <Formik
         initialValues={{ title: data.post.title, text: data.post.text }}
-        onSubmit={async (values, { setErrors }) => {
+        onSubmit={async (values) => {
           await updatePost({ id: intId, ...values });
           router.back();
         }}

@@ -1,4 +1,4 @@
-import { cacheExchange, Resolver } from "@urql/exchange-graphcache";
+import { cacheExchange, Resolver, Cache } from "@urql/exchange-graphcache";
 import {
   dedupExchange,
   Exchange,
@@ -66,58 +66,15 @@ export const cursorPagination = (): Resolver => {
       hasMore,
       posts: results,
     };
-    //   const visited = new Set();
-    //   let result: NullArray<string> = [];
-    //   let prevOffset: number | null = null;
-
-    //   for (let i = 0; i < size; i++) {
-    //     const { fieldKey, arguments: args } = fieldInfos[i];
-    //     if (args === null || !compareArgs(fieldArgs, args)) {
-    //       continue;
-    //     }
-
-    //     const links = cache.resolveFieldByKey(entityKey, fieldKey) as string[];
-    //     const currentOffset = args[offsetArgument];
-
-    //     if (
-    //       links === null ||
-    //       links.length === 0 ||
-    //       typeof currentOffset !== "number"
-    //     ) {
-    //       continue;
-    //     }
-
-    //     if (!prevOffset || currentOffset > prevOffset) {
-    //       for (let j = 0; j < links.length; j++) {
-    //         const link = links[j];
-    //         if (visited.has(link)) continue;
-    //         result.push(link);
-    //         visited.add(link);
-    //       }
-    //     } else {
-    //       const tempResult: NullArray<string> = [];
-    //       for (let j = 0; j < links.length; j++) {
-    //         const link = links[j];
-    //         if (visited.has(link)) continue;
-    //         tempResult.push(link);
-    //         visited.add(link);
-    //       }
-    //       result = [...tempResult, ...result];
-    //     }
-
-    //     prevOffset = currentOffset;
-    //   }
-
-    //   const hasCurrentPage = cache.resolve(entityKey, fieldName, fieldArgs);
-    //   if (hasCurrentPage) {
-    //     return result;
-    //   } else if (!(info as any).store.schema) {
-    //     return undefined;
-    //   } else {
-    //     info.partial = true;
-    //     return result;
-    //   }
   };
+};
+
+const invalidateAllPosts = (cache: Cache) => {
+  const allFields = cache.inspectFields("Query");
+  const fieldInfos = allFields.filter((info) => info.fieldName === "posts");
+  fieldInfos.forEach((fi) => {
+    cache.invalidate("Query", "posts", fi.arguments || {});
+  });
 };
 
 export const createUrqlClient = (ssrExchange: any, ctx: any) => {
@@ -126,7 +83,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
     cookie = ctx?.req?.headers?.cookie;
   }
   return {
-    url: "http://localhost:4000/graphql",
+    url: process.env.NEXT_PUBLIC_API_URL as string,
     fetchOptions: {
       credentials: "include" as const,
       headers: cookie
@@ -185,13 +142,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
               }
             },
             createPost: (_result, args, cache, info) => {
-              const allFields = cache.inspectFields("Query");
-              const fieldInfos = allFields.filter(
-                (info) => info.fieldName === "posts"
-              );
-              fieldInfos.forEach((fi) => {
-                cache.invalidate("Query", "posts", fi.arguments || {});
-              });
+              invalidateAllPosts(cache);
             },
             logout: (_result, args, cache, info) => {
               betterUpdateQuery<LogoutMutation, MeQuery>(
@@ -218,6 +169,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                   }
                 }
               );
+              invalidateAllPosts(cache);
             },
             register: (_result, args, cache, info) => {
               betterUpdateQuery<RegisterMutation, MeQuery>(
